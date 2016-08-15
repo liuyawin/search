@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" /><!--让IE以正常模式渲染，防止它进入怪异模式-->
+		<title>bing search js实现</title>
+		<style type="text/css">
+			body{
+				background-color: #333;
+				
+			}
+			.bg-div{
+				background-image: url(img/river.jpg);
+				width: 1228px;  
+				height: 690px;
+				margin: 0 auto;
+				position: relative;
+			}
+			.search-box{
+				position: absolute;
+				top: 200px;
+				left: 300px;
+			}
+			.logo{
+				background-image: url(img/logo.png);
+				width: 107px;
+				height: 53px;
+				float: left;
+				margin: -8px 18px 0 0;
+			}
+			#search-form{
+				float: left;
+				background-color: #fff;
+				padding: 4px;
+				/*-moz-border-radius: 4px;
+				-webkit-border-radius: 4px;
+				border-radius: 4px;*/
+			}
+			.search-input-text,.search-input-button {
+				border: 0;
+				float: left;
+			}
+			.search-input-text{
+				height: 25px;
+				line-height: 25px;
+				outline: none;
+				width: 350px;
+			}
+			.search-input-button{
+				background-image: url(img/search-button.png);
+				width: 29px;
+				height: 29px;
+			}
+			.suggest{
+				width: 388px;
+				background-color: #fff;
+				border: 1px solid #999;
+			}
+			.suggest ul{
+				list-style: none;
+				margin: 0;
+				padding: 0;	
+			}
+			.suggest ul li{
+				padding: 3px;
+				font-size: 14px;
+				line-height: 25px;
+				cursor: pointer;
+			}
+			.suggest ul li:hover{
+				text-decoration: underline;
+				background-color: #e5e5e5;	
+			}
+		</style>
+	</head>
+	<body>
+		<div class="bg-div">
+			<div class="search-box">
+				<div class="logo"></div>
+				<form id="search-form" action="">
+					<input type="text" class="search-input-text" name="q" id="search-input" autocomplete="off"/>
+					<input type="submit" value="" class="search-input-button"/>
+				</form>
+			</div>
+		</div>
+		<div class="suggest" id="search-suggest" style="display: none">
+			<ul id="search-result">
+				<li>hehe1</li>
+				<li>hehe2</li>
+				<li>hehe3</li>
+			</ul>
+		</div>
+		<script>
+			//封装常用的函数
+			/**
+			 * 通过id获取DOM元素
+			 */
+			var getDOM = function(id){
+				return document.getElementById(id);
+			}
+			/**
+			 * 事件绑定函数
+			 */
+			var addEvent = function(id,event,fn){
+				var el = getDOM(id)||document;
+				if(el.addEventListener){
+					el.addEventListener(event,fn,false);
+				}else if(el.attachEvent){
+					el.attachEvent('on' + event,fn);
+				}
+			}
+			/**
+			 * 取得元素到浏览器左边的距离
+			 */
+			var getElementLeft = function(element){
+				var actualLeft = element.offsetLeft;
+				var current = element.offsetParent;
+				//该元素到浏览器左边的距离等于它到它父元素左边的距离与它父元素到浏览器左边的距离之和
+				while(current != null){
+					actualLeft += current.offsetLeft;//offsetLeft是获得距离父元素左边的距离
+					current = current.offsetParent;
+				}
+				return actualLeft;
+			}
+			/**
+			 * 取得元素到浏览器顶部的距离
+			 */
+			var getElementTop = function(element){
+				var actualTop = element.offsetTop;
+				var current = element.offsetParent;
+				
+				while(current != null){
+					actualTop += current.offsetTop;
+					current = current.offsetParent;
+				}
+				return actualTop;
+			}
+			
+			var ajaxGet = function(url,callback){
+				var _xhr = null;
+				if(window.XMLHttpRequest){
+					_xhr = new window.XMLHttpRequest();
+				}else if(window.ActiveXObject){
+					_xhr = new ActiveXObject("Msxml2.XMLHTTP");
+				}
+				
+				_xhr.onreadystatechange = function(){
+					if(_xhr.readyState == 4 && _xhr.status = 200){
+						callback(JSON.parse(_xhr.responseText));//服务器返回的值放在responseText里面；JSON.parse()的作用是把字符串转化为JS可以识别的对象
+					}
+				}
+				_xhr.open('get',url,false);//使用Ajax技术第三个参数必须设置为false，表示异步
+				_xhr.send(null);//向服务器发送数据
+			}
+			/**
+			 * 事件代理
+			 * 为JS动态生成的网页元素添加事件时，通常使用事件代理来实现
+			 * target:给什么元素绑定事件代理
+			 * event:事件
+			 * fn:绑定的方法
+			 */
+			var delegateEvent = function(target,event,fn){
+				addEvent(document,event,function(e){
+					if(e.target.nodeName == target.toUpperCase()){
+						fn.call(e.target);
+					}
+				});
+			}
+			addEvent('search-input','keyup',function(){
+				var searchText = getDOM('search_input').value;
+				ajaxGet('http://api.bing.com/qsonhs.aspx?q='+searchText,function(d){
+					var d = d.AS.result[0].Suggests;
+					var html = null;
+					for(var i=0; i<d.length; i++){
+						html += '<li>' + d[i].Txt + '</li>';
+					}
+					getDOM('search-suggest').innerHTML = html;
+					getDOM('search-suggest').style.top = getElementTop(getDOM('search-form')) + 38 + 'px';
+					getDOM('search-suggest').style.left = getElementLeft(getDOM('search-form')) + 'px';
+					getDOM('search-suggest').style.position = 'absolute';
+					getDOM('search-suggest').style.display = 'block';
+				})				
+			});
+			
+			delegateEvent('li','click',function(){
+				var keyWord = this.innerHTML;
+				location.href = 'http://cn.bing.com/search?q=' + keyWord;
+			})
+		</script>
+	</body>
+</html>

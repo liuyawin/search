@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" /><!--让IE以正常模式渲染，防止它进入怪异模式-->
+		<title>bing search jQuery实现</title>
+		<style type="text/css">
+			body{
+				background-color: #333;
+				
+			}
+			.bg-div{
+				background-image: url(img/river.jpg);
+				width: 1228px;  
+				height: 690px;
+				margin: 0 auto;
+				position: relative;
+			}
+			.search-box{
+				position: absolute;
+				top: 200px;
+				left: 300px;
+			}
+			.logo{
+				background-image: url(img/logo.png);
+				width: 107px;
+				height: 53px;
+				float: left;
+				margin: -8px 18px 0 0;
+			}
+			.search-form{
+				float: left;
+				background-color: #fff;
+				padding: 4px;
+				/*-moz-border-radius: 4px;
+				-webkit-border-radius: 4px;
+				border-radius: 4px;*/
+			}
+			.search-input-text,.search-input-button {
+				border: 0;
+				float: left;
+			}
+			.search-input-text{
+				height: 25px;
+				line-height: 25px;
+				outline: none;
+				width: 350px;
+			}
+			.search-input-button{
+				background-image: url(img/search-button.png);
+				width: 29px;
+				height: 29px;
+			}
+			.suggest{
+				width: 388px;
+				background-color: #fff;
+				border: 1px solid #999;
+			}
+			.suggest ul{
+				list-style: none;
+				margin: 0;
+				padding: 0;	
+			}
+			.suggest ul li{
+				padding: 3px;
+				font-size: 14px;
+				line-height: 25px;
+				cursor: pointer;
+			}
+			.suggest ul li:hover{
+				text-decoration: underline;
+				background-color: #e5e5e5;	
+			}
+		</style>
+	</head>
+	<body>
+		<div class="bg-div">
+			<div class="search-box">
+				<div class="logo"></div>
+				<form class="search-form" action="">
+					<input type="text" class="search-input-text" name="q" id="search-input" autocomplete="off"/>
+					<input type="submit" value="" class="search-input-button"/>
+				</form>
+			</div>
+		</div>
+		<div class="suggest" id="search-suggest" style="display: none">
+			<ul id="search-result">
+				
+			</ul>
+		</div>
+		<script type="text/javascript" src="js/jquery-1.9.1.min.js" ></script>
+		<script>
+			$('#search-input').on('keyup',function(){
+				//利用ajax从后台获取的结果调出提示框
+				var searchText = $('#search-input').val();
+				$.get('http://api.bing.com/qsonhs.aspx?q=' + searchText,function(d){
+					var d = d.AS.result[0].Suggests;
+					var html = '';
+					for (var i=0; i<d.length; i++) {
+						html += '<li>' + d[i].Txt + '</li>';
+					}
+					$('#search-result').html(html);
+					//提示框样式
+					$('#search-suggest').show().css({
+					top:$('.search-form').offset().top + $('.search-form').height() + 8,
+					left:$('.search-form').offset().left,
+					position:'absolute'
+				});
+				},'json')				
+			})
+			//点击页面中其他位置时提示框消失
+			$(document).on('click',function(){
+				$('#search-suggest').hide();
+			})
+			//点击提示框中的文本时跳转到相应的搜索页
+			$(documen).delegate('li','click',function(){
+				var keyword = $(this).text();
+				location.href = 'https://cn.bing.com/search?q=' + keyword;
+			})
+		</script>
+	</body>
+</html>
